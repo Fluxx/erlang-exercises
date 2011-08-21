@@ -20,3 +20,6 @@ max(A, [H | T]) when A > H ->
   max(A, T);
 max(_A, [H | T]) ->
   max(H, T).
+
+min_max(List) ->
+  {min(List), max(List)}.
