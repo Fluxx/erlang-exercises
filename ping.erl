@@ -1,4 +1,4 @@
--module (concurrency).
+-module (ping).
 -export ([start/0, listen/0]).
 
 ping(Listener, 0) ->
