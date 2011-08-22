@@ -1,24 +1,19 @@
--module (ring).
--export ([build/1, listen_and_forward_to/1]).
+-module(ring).
+-export([start/2, build/1, listen_and_forward_to/1]).
 
-% Initial start to building a ring. Takes in a ring size and spawns the first process.
+start(Size, Message) ->
+  LastPid = build(Size - 1),
+  LastPid ! Message,
+  listen_and_forward_to(LastPid).
+
 build(Size) ->
-  spawn(fun() -> build(Size - 1, self()) end).
-  
-% The last listening process.  It listens and forwards requests to the starting pid.
-build(0, StartingPid) ->
-  io:format("Spawning last listener~n", []),
-  listen_and_forward_to(StartingPid);
-% Builds a successor process that it will forward requests to, and then sets itslef up
-% to listen for work.
-build(Size, StartingPid) ->
-  io:format("Spawning successor for ~p~n", [Size]),
-  Successor = spawn(fun() -> build(Size - 1, StartingPid) end),
-  listen_and_forward_to(Successor).
-  
+  Builder = fun(_Num, Pid) -> spawn(ring, listen_and_forward_to, [Pid]) end,
+  lists:foldl(Builder, self(), lists:seq(1, Size)).
+
 listen_and_forward_to(Pid) ->
+  io:format("Process ~p forwarding to ~p~n", [self(), Pid]),
   receive
     Message ->
-      io:format("Received ~p~n", [Message]),
+      io:format("Process ~p received ~p, forwarding to ~p~n", [self(), Message, Pid]),
       Pid ! Message
   end.
