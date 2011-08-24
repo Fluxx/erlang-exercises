@@ -1,10 +1,12 @@
 -module(star).
--export([start/1, listen_for_response/0, listen_and_respond_to/1]).
+-export([start/3, listen_for_response/0, listen_and_respond_to/1]).
 
-start(Number) ->
+start(Number, Message, Count) ->
   Centroid = spawn(star, listen_for_response, []),
   Points = spawn_points(Number, Centroid),
-  lists:foreach(fun (Pid) -> Pid ! "Hello World" end, Points).
+  lists:foreach(fun (_N) -> send(Message, Points) end, lists:seq(1, Count)).
+
+send(Message, Pids) -> lists:foreach(fun (Pid) -> Pid ! Message end, Pids).
 
 spawn_points(Number, Centroid) ->
   Spawner = fun(_N) -> spawn(star, listen_and_respond_to, [Centroid]) end,
@@ -16,10 +18,11 @@ listen_for_response() ->
       io:format("Centroid received ~p~n", [Message]),
       listen_for_response()
   end.
-  
+
 listen_and_respond_to(Centroid) ->
   receive
     Message ->
       io:format("Process ~p received ~p forwarding back to ~p~n", [self(), Message, Centroid]),
-      Centroid ! Message
+      Centroid ! Message,
+      listen_and_respond_to(Centroid)
   end.
